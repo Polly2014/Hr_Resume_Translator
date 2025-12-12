@@ -1,0 +1,166 @@
+name: Build Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: 简历解析助手-Windows
+            executable_ext: .exe
+          - os: macos-latest
+            artifact_name: 简历解析助手-macOS
+            executable_ext: ""
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+      
+      - name: Create launcher script
+        shell: python
+        run: |
+          launcher_code = '''#!/usr/bin/env python3
+          # -*- coding: utf-8 -*-
+          import subprocess
+          import sys
+          import os
+          import webbrowser
+          import time
+          import socket
+          from pathlib import Path
+
+          def find_free_port():
+              with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                  s.bind(('', 0))
+                  return s.getsockname()[1]
+
+          def main():
+              if getattr(sys, 'frozen', False):
+                  app_dir = Path(sys._MEIPASS)
+              else:
+                  app_dir = Path(__file__).parent
+              
+              os.chdir(app_dir)
+              port = find_free_port()
+              
+              print(f"🚀 正在启动简历解析助手...")
+              print(f"📍 端口: {port}")
+              
+              import streamlit.web.cli as stcli
+              
+              def open_browser():
+                  time.sleep(3)
+                  webbrowser.open(f"http://localhost:{port}")
+              
+              import threading
+              threading.Thread(target=open_browser, daemon=True).start()
+              
+              sys.argv = [
+                  "streamlit", "run",
+                  str(app_dir / "app.py"),
+                  f"--server.port={port}",
+                  "--server.headless=true",
+                  "--browser.gatherUsageStats=false",
+                  "--global.developmentMode=false"
+              ]
+              stcli.main()
+
+          if __name__ == "__main__":
+              main()
+          '''
+          
+          with open("launcher.py", "w", encoding="utf-8") as f:
+              f.write(launcher_code)
+          print("Created launcher.py")
+      
+      - name: Build with PyInstaller (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          pyinstaller --name="简历解析助手" --onedir --windowed --noconfirm --clean `
+            --add-data="app.py;." `
+            --add-data="resume_parser.py;." `
+            --add-data="resume_template_generator.py;." `
+            --add-data=".env;." `
+            --add-data="Templates;Templates" `
+            --hidden-import=streamlit `
+            --hidden-import=streamlit.web.cli `
+            --hidden-import=streamlit.runtime.scriptrunner `
+            --hidden-import=altair `
+            --hidden-import=pandas `
+            --hidden-import=numpy `
+            --hidden-import=openpyxl `
+            --hidden-import=fitz `
+            --hidden-import=docx `
+            --hidden-import=litellm `
+            --hidden-import=dotenv `
+            --collect-all=streamlit `
+            --collect-all=altair `
+            launcher.py
+      
+      - name: Build with PyInstaller (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller --name="简历解析助手" --onedir --windowed --noconfirm --clean \
+            --add-data="app.py:." \
+            --add-data="resume_parser.py:." \
+            --add-data="resume_template_generator.py:." \
+            --add-data=".env:." \
+            --add-data="Templates:Templates" \
+            --hidden-import=streamlit \
+            --hidden-import=streamlit.web.cli \
+            --hidden-import=streamlit.runtime.scriptrunner \
+            --hidden-import=altair \
+            --hidden-import=pandas \
+            --hidden-import=numpy \
+            --hidden-import=openpyxl \
+            --hidden-import=fitz \
+            --hidden-import=docx \
+            --hidden-import=litellm \
+            --hidden-import=dotenv \
+            --collect-all=streamlit \
+            --collect-all=altair \
+            launcher.py
+      
+      - name: Create ZIP archive (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Compress-Archive -Path "dist/简历解析助手" -DestinationPath "${{ matrix.artifact_name }}.zip"
+      
+      - name: Create ZIP archive (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd dist && zip -r "../${{ matrix.artifact_name }}.zip" "简历解析助手.app" || zip -r "../${{ matrix.artifact_name }}.zip" "简历解析助手"
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.zip
+          retention-days: 30
+      
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.artifact_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
