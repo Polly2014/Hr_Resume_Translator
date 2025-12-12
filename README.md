@@ -17,7 +17,7 @@
 
 ## 📸 界面预览
 
-![Web界面](docs/screenshot.png)
+![Resume Translator](ScreenShot.png)
 
 ## 🚀 快速开始
 
