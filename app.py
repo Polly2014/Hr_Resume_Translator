@@ -495,8 +495,10 @@ def main():
     # 页脚
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("""
-    <div style="text-align: center; color: #a0aec0; font-size: 0.85rem; padding: 2rem 0;">
-        Made with ❤️ for you
+    <div style="text-align: center; padding: 2rem 0;">
+        <div style="color: #a0aec0; font-size: 0.85rem; font-style: italic; margin-bottom: 0.5rem;">
+            Written in code, meant for you! 💝
+        </div>
     </div>
     """, unsafe_allow_html=True)
 

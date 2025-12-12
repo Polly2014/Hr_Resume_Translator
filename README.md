@@ -137,4 +137,10 @@ MIT License
 
 ---
 
-Made with ❤️ for HR
+<div align="center">
+
+*Written in code, meant for you!*
+
+Made with ❤️ for Qi
+
+</div>
