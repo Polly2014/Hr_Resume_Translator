@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 AI 简历解析助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #252542;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-pink: #ec4899;
+            --text-primary: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1a3a 50%, #0a0a2a 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* 粒子背景 */
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
+            10% { opacity: 0.5; transform: scale(1); }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-100vh) translateX(50px) scale(0); opacity: 0; }
+        }
+
+        /* 主容器 */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 标题 */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .main-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan), var(--accent-pink));
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 4s ease infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* 卡片 */
+        .card {
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(168, 85, 247, 0.3);
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.1);
+        }
+
+        /* 上传区域 */
+        .upload-zone {
+            border: 2px dashed rgba(168, 85, 247, 0.4);
+            border-radius: 16px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(transparent, rgba(168, 85, 247, 0.05), transparent 30%);
+            animation: rotate 6s linear infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-purple);
+            background: rgba(168, 85, 247, 0.05);
+            transform: scale(1.01);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-hint {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            position: relative;
+            z-index: 1;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* 区域标题 */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .section-badge {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* 文件列表 */
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: rgba(168, 85, 247, 0.08);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .file-item.new {
+            animation: slide-in 0.3s ease;
+        }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-item:hover {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-icon {
+            font-size: 1.5rem;
+        }
+
+        .file-name {
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-remove {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .file-remove:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: scale(1.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+
+        /* 按钮区域 */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 35px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: white;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.6);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(34, 197, 94, 0.25);
+            border-color: var(--success);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* 结果卡片 */
+        .result-card {
+            background: rgba(26, 26, 46, 0.6);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .result-card.new {
+            animation: fade-in 0.4s ease;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .result-card:hover {
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .result-card.processing {
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: 0 0 10px rgba(6, 182, 212, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(6, 182, 212, 0.4); }
+        }
+
+        .result-card.completed {
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        .result-card.error {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .result-filename {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
+        .status-processing { background: rgba(6, 182, 212, 0.2); color: var(--accent-cyan); }
+        .status-completed { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .status-error { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+        }
+
+        /* 结果信息 */
+        .result-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 15px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .info-value {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* 结果操作 */
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--success), #16a34a);
+            color: white;
+            border: none;
+        }
+
+        .btn-download:hover {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-preview {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-preview:hover {
+            background: rgba(168, 85, 247, 0.25);
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 30px 0 20px;
+            color: rgba(168, 85, 247, 0.5);
+            font-style: italic;
+            margin-top: auto;
+        }
+
+        .footer .highlight {
+            color: var(--accent-pink);
+            font-weight: 600;
+        }
+
+        .footer .quote {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            margin-top: 8px;
+        }
+
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow: hidden;
+            animation: modal-in 0.3s ease;
+        }
+
+        @keyframes modal-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .json-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: var(--accent-cyan);
+        }
+
+        /* Excel 表格预览 */
+        .excel-preview {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .excel-table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .excel-table th,
+        .excel-table td {
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            padding: 8px 10px;
+            text-align: left;
+            white-space: nowrap;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .excel-table th {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-purple);
+            font-weight: 600;
+        }
+
+        .excel-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .excel-table tr:hover {
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .modal-tab:hover {
+            background: rgba(168, 85, 247, 0.1);
+            color: var(--text-primary);
+        }
+
+        .modal-tab.active {
+            background: rgba(168, 85, 247, 0.2);
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+        }
+
+        .modal.wide {
+            max-width: 95%;
+            width: 1200px;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(var(--accent-purple), var(--accent-blue)); 
+            border-radius: 3px; 
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .main-container { padding: 20px 15px; }
+            .main-title { font-size: 2rem; }
+            .card { padding: 20px; }
+            .button-group { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            .result-info { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <div id="particles"></div>
+
+    <div class="main-container">
+        <!-- 标题 -->
+        <header class="header">
+            <h1 class="main-title">🚀 AI 简历解析助手</h1>
+            <p class="subtitle">智能提取 · 一键生成标准模板</p>
+        </header>
+
+        <!-- 上传区域 -->
+        <div class="card">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">拖拽简历到这里，或点击选择</div>
+                <div class="upload-hint">支持 PDF / Word (.docx) 格式</div>
+                <input type="file" class="file-input" id="fileInput" multiple accept=".pdf,.docx">
+            </div>
+        </div>
+
+        <!-- 待处理文件 -->
+        <div class="card" id="pendingCard" style="display: none;">
+            <div class="section-header">
+                <span class="section-title">📋 待处理</span>
+                <span class="section-badge" id="pendingCount">0</span>
+            </div>
+            <div class="file-list" id="pendingList"></div>
+            <div class="button-group">
+                <button class="btn btn-primary" id="startBtn" disabled>
+                    🚀 开始解析
+                </button>
+                <button class="btn btn-secondary" id="downloadAllBtn" disabled>
+                    📦 全部下载
+                </button>
+            </div>
+        </div>
+
+        <!-- 解析结果 -->
+        <div class="card" id="resultsCard" style="display: none;">
+            <div class="section-header">
+                <span class="section-title">📊 解析结果</span>
+                <span class="section-badge" id="resultsCount">0</span>
+            </div>
+            <div id="resultsList"></div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p class="quote">Written in code, meant for you! 💝</p>
+            <p>✨ To <span class="highlight">Qi Wang</span> ✨</p>
+        </footer>
+    </div>
+
+    <!-- 预览弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitle">📄 解析详情</span>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <pre class="json-preview" id="jsonPreview"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 应用状态
+        // ============================================================
+        const state = {
+            tasks: new Map(),
+            isProcessing: false
+        };
+
+        // ============================================================
+        // DOM 元素
+        // ============================================================
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const pendingCard = document.getElementById('pendingCard');
+        const pendingList = document.getElementById('pendingList');
+        const pendingCount = document.getElementById('pendingCount');
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsList = document.getElementById('resultsList');
+        const resultsCount = document.getElementById('resultsCount');
+        const startBtn = document.getElementById('startBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+        // ============================================================
+        // 粒子效果
+        // ============================================================
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const colors = ['#a855f7', '#3b82f6', '#06b6d4', '#ec4899'];
+            
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = color;
+                particle.style.boxShadow = `0 0 10px ${color}`;
+                particle.style.width = (2 + Math.random() * 3) + 'px';
+                particle.style.height = particle.style.width;
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // ============================================================
+        // 文件上传
+        // ============================================================
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+            fileInput.value = '';
+        });
+
+        async function handleFiles(files) {
+            const filesArray = Array.from(files);
+            
+            for (let i = 0; i < filesArray.length; i++) {
+                const file = filesArray[i];
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!['pdf', 'docx'].includes(ext)) {
+                    alert(`不支持的格式: ${file.name}`);
+                    continue;
+                }
+
+                // 上传文件
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    
+                    if (data.error) {
+                        alert(data.error);
+                        continue;
+                    }
+
+                    state.tasks.set(data.id, {
+                        id: data.id,
+                        filename: data.filename,
+                        status: 'pending'
+                    });
+
+                    updateUI();
+                } catch (err) {
+                    console.error('上传失败:', err);
+                    alert('上传失败: ' + file.name);
+                }
+            }
+        }
+
+        // ============================================================
+        // UI 更新
+        // ============================================================
+        function updateUI(isNew = true) {
+            const pending = [...state.tasks.values()].filter(t => t.status === 'pending');
+            const processing = [...state.tasks.values()].filter(t => t.status === 'processing');
+            const completed = [...state.tasks.values()].filter(t => t.status === 'completed' || t.status === 'error');
+            const allTasks = [...state.tasks.values()];
+
+            // 只要有任务就显示待处理卡片
+            if (allTasks.length > 0) {
+                pendingCard.style.display = 'block';
+                pendingCount.textContent = pending.length;
+                
+                if (pending.length > 0) {
+                    pendingList.innerHTML = pending.map(task => `
+                        <div class="file-item">
+                            <div class="file-info">
+                                <span class="file-icon">${task.filename.endsWith('.pdf') ? '📄' : '📝'}</span>
+                                <span class="file-name">${task.filename}</span>
+                            </div>
+                            <button class="file-remove" onclick="removeTask('${task.id}')">✕</button>
+                        </div>
+                    `).join('');
+                } else {
+                    pendingList.innerHTML = '<div class="empty-state">没有待处理文件</div>';
+                }
+
+                startBtn.disabled = pending.length === 0 || state.isProcessing;
+                
+                // 有完成的任务就启用下载按钮
+                const completedSuccess = completed.filter(t => t.status === 'completed');
+                downloadAllBtn.disabled = completedSuccess.length === 0;
+            } else {
+                pendingCard.style.display = 'none';
+            }
+
+            // 结果列表
+            const allResults = [...processing, ...completed];
+            if (allResults.length > 0) {
+                resultsCard.style.display = 'block';
+                resultsCount.textContent = `${completed.filter(t => t.status === 'completed').length}/${allResults.length}`;
+                
+                resultsList.innerHTML = allResults.map(task => renderResultCard(task, isNew)).join('');
+            } else {
+                resultsCard.style.display = 'none';
+            }
+        }
+
+        function renderResultCard(task, isNew = false) {
+            const statusMap = {
+                'pending': { icon: '🕐', text: '等待中', class: 'status-pending' },
+                'processing': { icon: '⏳', text: '解析中', class: 'status-processing' },
+                'completed': { icon: '✅', text: '已完成', class: 'status-completed' },
+                'error': { icon: '❌', text: '失败', class: 'status-error' }
+            };
+            const status = statusMap[task.status];
+            const newClass = isNew ? 'new' : '';
+
+            let content = `
+                <div class="result-card ${task.status} ${newClass}">
+                    <div class="result-header">
+                        <span class="result-filename">${task.filename}</span>
+                        <span class="status-badge ${status.class}">${status.icon} ${status.text}</span>
+                    </div>
+            `;
+
+            if (task.status === 'processing') {
+                content += `
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${task.progress || 0}%"></div>
+                    </div>
+                    <div class="progress-text">${task.message || '处理中...'}</div>
+                `;
+            }
+
+            if (task.status === 'completed' && task.result) {
+                const basicInfo = task.result['basic_info'] || task.result['基本信息'] || {};
+                const personalInfo = task.result['personal_info'] || task.result['个人信息'] || {};
+                const workExp = task.result['work_experience'] || task.result['工作经历'] || [];
+                const latestJob = workExp.length > 0 ? workExp[0] : {};
+                
+                content += `
+                    <div class="result-info">
+                        <div class="info-item">
+                            <span class="info-label">👤 姓名</span>
+                            <span class="info-value">${basicInfo['name'] || basicInfo['姓名'] || '未提取'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">💼 当前/最近职位</span>
+                            <span class="info-value">${latestJob['position'] || latestJob['岗位'] || '未提取'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">📞 电话</span>
+                            <span class="info-value">${personalInfo['phone'] || personalInfo['电话'] || '未提取'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">🎓 最高学历</span>
+                            <span class="info-value">${personalInfo['highest_education'] || personalInfo['最高学历'] || '未提取'}</span>
+                        </div>
+                    </div>
+                    <div class="result-actions">
+                        <a href="/api/tasks/${task.id}/download" class="btn btn-sm btn-download">📥 下载 Excel</a>
+                        <button class="btn btn-sm btn-preview" onclick="showExcelPreview('${task.id}')" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.3);">📊 预览表格</button>
+                        <button class="btn btn-sm btn-preview" onclick="showJsonPreview('${task.id}')">📄 解析JSON</button>
+                    </div>
+                `;
+            }
+
+            if (task.status === 'error') {
+                content += `
+                    <div style="color: var(--error); margin-top: 10px; font-size: 0.9rem;">
+                        ❌ ${task.message || '处理失败'}
+                    </div>
+                `;
+            }
+
+            content += '</div>';
+            return content;
+        }
+
+        // ============================================================
+        // 任务操作
+        // ============================================================
+        async function removeTask(taskId) {
+            await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+            state.tasks.delete(taskId);
+            updateUI();
+        }
+
+        startBtn.addEventListener('click', async () => {
+            state.isProcessing = true;
+            startBtn.disabled = true;
+
+            try {
+                await fetch('/api/process', { method: 'POST' });
+                
+                // 轮询状态
+                pollStatus();
+            } catch (err) {
+                console.error(err);
+                state.isProcessing = false;
+                updateUI();
+            }
+        });
+
+        async function pollStatus() {
+            const pending = [...state.tasks.values()].filter(
+                t => t.status === 'pending' || t.status === 'processing'
+            );
+
+            if (pending.length === 0) {
+                state.isProcessing = false;
+                updateUI();
+                return;
+            }
+
+            let hasChanges = false;
+            for (const task of pending) {
+                try {
+                    const res = await fetch(`/api/tasks/${task.id}/status`);
+                    const data = await res.json();
+                    
+                    // 检查是否有变化
+                    const oldTask = state.tasks.get(task.id);
+                    if (!oldTask || oldTask.status !== data.status || oldTask.progress !== data.progress) {
+                        hasChanges = true;
+                    }
+                    
+                    state.tasks.set(task.id, data);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            // 只在有变化时更新 UI
+            if (hasChanges) {
+                updateUI(false);  // false 表示不是新添加
+            }
+
+            // 继续轮询
+            const stillProcessing = [...state.tasks.values()].some(
+                t => t.status === 'pending' || t.status === 'processing'
+            );
+
+            if (stillProcessing) {
+                setTimeout(pollStatus, 800);  // 稍微延长轮询间隔
+            } else {
+                state.isProcessing = false;
+                updateUI(false);
+            }
+        }
+
+        downloadAllBtn.addEventListener('click', () => {
+            window.location.href = '/api/download-all';
+        });
+
+        // ============================================================
+        // 预览功能
+        // ============================================================
+        
+        // JSON 预览
+        async function showJsonPreview(taskId) {
+            try {
+                const res = await fetch(`/api/tasks/${taskId}/result`);
+                const data = await res.json();
+                
+                const modal = document.getElementById('modal');
+                modal.classList.remove('wide');
+                document.getElementById('modalTitle').textContent = '📄 解析结果 (JSON)';
+                document.getElementById('modalBody').innerHTML = `
+                    <pre class="json-preview">${JSON.stringify(data, null, 2)}</pre>
+                `;
+                document.getElementById('modalOverlay').classList.add('active');
+            } catch (err) {
+                alert('获取详情失败');
+            }
+        }
+
+        // Excel 表格预览
+        async function showExcelPreview(taskId) {
+            try {
+                const res = await fetch(`/api/tasks/${taskId}/excel-preview`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                const modal = document.getElementById('modal');
+                modal.classList.add('wide');
+                document.getElementById('modalTitle').textContent = '📊 Excel 预览';
+                
+                // 构建表格 HTML
+                let tableHtml = '<div class="excel-preview"><table class="excel-table">';
+                
+                data.rows.forEach((row, rowIndex) => {
+                    tableHtml += '<tr>';
+                    row.forEach((cell, colIndex) => {
+                        // 检查是否是合并单元格的一部分（非起始单元格）
+                        let isMerged = false;
+                        let skipCell = false;
+                        let rowspan = 1;
+                        let colspan = 1;
+                        
+                        for (const merged of data.mergedCells) {
+                            if (rowIndex >= merged.startRow && rowIndex <= merged.endRow &&
+                                colIndex >= merged.startCol && colIndex <= merged.endCol) {
+                                if (rowIndex === merged.startRow && colIndex === merged.startCol) {
+                                    // 起始单元格
+                                    rowspan = merged.endRow - merged.startRow + 1;
+                                    colspan = merged.endCol - merged.startCol + 1;
+                                    isMerged = true;
+                                } else {
+                                    // 被合并的单元格，跳过
+                                    skipCell = true;
+                                }
+                                break;
+                            }
+                        }
+                        
+                        if (!skipCell) {
+                            const tag = rowIndex === 0 ? 'th' : 'td';
+                            const spanAttrs = [];
+                            if (rowspan > 1) spanAttrs.push(`rowspan="${rowspan}"`);
+                            if (colspan > 1) spanAttrs.push(`colspan="${colspan}"`);
+                            tableHtml += `<${tag} ${spanAttrs.join(' ')}>${cell}</${tag}>`;
+                        }
+                    });
+                    tableHtml += '</tr>';
+                });
+                
+                tableHtml += '</table></div>';
+                
+                document.getElementById('modalBody').innerHTML = tableHtml;
+                document.getElementById('modalOverlay').classList.add('active');
+            } catch (err) {
+                console.error(err);
+                alert('获取 Excel 预览失败');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay') {
+                closeModal();
+            }
+        });
+
+        // ESC 关闭弹窗
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>

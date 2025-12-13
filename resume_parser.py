@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 简历解析脚本
-支持 PDF 和 Word (.docx) 格式简历，通过 LiteLLM 调用 DeepSeek 进行结构化信息提取
+支持 PDF 和 Word (.docx) 格式简历，通过 OpenAI 兼容 API 调用 DeepSeek 进行结构化信息提取
 """
 
 import json
@@ -12,7 +12,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import fitz  # PyMuPDF
 from docx import Document  # python-docx
-from litellm import completion
+from openai import OpenAI
 
 # 加载环境变量
 env_path = Path(__file__).parent / ".env"
@@ -20,12 +20,15 @@ load_dotenv(env_path)
 
 # API 配置
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL")
-AI_MODEL = os.getenv("AI_MODEL", "deepseek/deepseek-chat")
+DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+AI_MODEL = os.getenv("AI_MODEL", "deepseek-chat")  # 使用原生模型名
 AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", 150))
 
-# 设置 API Key
-os.environ["DEEPSEEK_API_KEY"] = DEEPSEEK_API_KEY
+# 创建 OpenAI 客户端（兼容 DeepSeek API）
+client = OpenAI(
+    api_key=DEEPSEEK_API_KEY,
+    base_url=DEEPSEEK_BASE_URL,
+)
 
 
 def extract_text_from_pdf(pdf_path: str) -> str:
@@ -193,14 +196,13 @@ def parse_resume_with_llm(resume_text: str) -> dict:
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = completion(
+            response = client.chat.completions.create(
                 model=AI_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
                 timeout=AI_TIMEOUT,
-                api_base=DEEPSEEK_BASE_URL,
             )
             
             result_text = response.choices[0].message.content.strip()

@@ -1,4 +1,4 @@
-# 简历解析助手 - 核心依赖
+# ◈ CYBER RESUME PARSER v1.0 ◈
 # Python 3.9+
 
 # PDF 解析
@@ -7,8 +7,8 @@ PyMuPDF>=1.23.0
 # Word 文档解析  
 python-docx>=1.1.0
 
-# AI 大模型调用
-litellm>=1.0.0
+# AI 大模型调用 (OpenAI 兼容 API)
+openai>=1.0.0
 
 # Excel 处理
 openpyxl>=3.1.0
@@ -16,5 +16,15 @@ openpyxl>=3.1.0
 # 环境变量
 python-dotenv>=1.0.0
 
-# Web 界面
-streamlit>=1.28.0
+# Web 框架
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# 桌面窗口
+pywebview>=4.0.0
+
+# 图像处理 (图标生成)
+Pillow>=10.0.0
+
+# 打包工具 (可选)
+# pyinstaller>=6.0.0

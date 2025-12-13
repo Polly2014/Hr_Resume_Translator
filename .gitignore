@@ -4,9 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -32,11 +30,14 @@ ENV/
 *.swp
 *.swo
 *~
+
+# macOS
 .DS_Store
 
 # PyInstaller
+build/
+dist/
 *.manifest
-*.spec
 
 # Environment variables
 .env
@@ -56,9 +57,6 @@ Resumes/*.pdf
 Resumes/*.docx
 Resumes/*.doc
 
-# Template files
-Templates/*.xlsx
-
 # Jupyter Notebook
 .ipynb_checkpoints/
 
@@ -73,4 +71,3 @@ htmlcov/
 # Distribution
 *.tar.gz
 *.zip
-.github/workflows/
