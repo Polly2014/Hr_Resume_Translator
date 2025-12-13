@@ -107,6 +107,57 @@ pyinstaller build_app.spec --clean --noconfirm
 
 打包后的应用位于 `dist/Cyber Resume Parser.app`
 
+## 🏷️ 发布新版本 (GitHub Release)
+
+项目配置了 GitHub Actions 自动构建，推送版本标签后会自动打包 macOS 和 Windows 版本并发布到 Releases。
+
+### 发布步骤
+
+```bash
+# 1. 确保代码已提交并推送
+git add .
+git commit -m "feat: 新功能描述"
+git push origin main
+
+# 2. 创建版本标签
+git tag v1.0.0
+
+# 3. 推送标签触发自动构建
+git push origin v1.0.0
+```
+
+### 自动构建产物
+
+| 平台 | Desktop 版 | Browser 版 |
+|------|-----------|------------|
+| macOS | Mac-desktop.zip | Mac-browser.zip |
+| Windows | Windows-desktop.zip | Windows-browser.zip |
+
+- **Desktop 版**: 双击直接运行，独立窗口
+- **Browser 版**: 命令行启动，在浏览器中打开
+
+### 更新版本标签
+
+如需重新构建同一版本：
+
+```bash
+# 删除本地和远程标签
+git tag -d v1.0.0
+git push origin :refs/tags/v1.0.0
+
+# 重新创建并推送
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### 首次配置 GitHub Actions
+
+1. **添加 Secret**: Settings → Secrets → Actions → New repository secret
+   - Name: `DEEPSEEK_API_KEY`
+   - Value: 你的 API 密钥
+
+2. **开启写入权限**: Settings → Actions → Workflow permissions → **Read and write permissions**
+
 ## 📋 提取的信息
 
 | 类别 | 字段 |
