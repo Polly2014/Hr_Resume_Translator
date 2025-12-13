@@ -1,0 +1,147 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 推送 v1.0.0 这样的标签时触发
+
+jobs:
+  # ==================== macOS 构建 ====================
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        mode: [desktop, browser]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install pyinstaller
+        pip install flask flask-cors pywebview
+        pip install openai python-dotenv
+        pip install pymupdf python-docx openpyxl pillow
+    
+    - name: Build Desktop (windowed)
+      if: matrix.mode == 'desktop'
+      run: |
+        pyinstaller --name="Cyber Resume Parser" \
+          --windowed \
+          --icon=icon.jpg \
+          --add-data="static:static" \
+          --add-data="Templates:Templates" \
+          --add-data=".env:." \
+          desktop_app.py
+    
+    - name: Build Browser (console)
+      if: matrix.mode == 'browser'
+      run: |
+        pyinstaller --name="Cyber Resume Parser Browser" \
+          --console \
+          --add-data="static:static" \
+          --add-data="Templates:Templates" \
+          --add-data=".env:." \
+          desktop_app.py
+    
+    - name: Create ZIP
+      run: |
+        cd dist
+        zip -r ../Mac-${{ matrix.mode }}.zip .
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Mac-${{ matrix.mode }}
+        path: Mac-${{ matrix.mode }}.zip
+
+  # ==================== Windows 构建 ====================
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        mode: [desktop, browser]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install pyinstaller
+        pip install flask flask-cors pywebview
+        pip install openai python-dotenv
+        pip install pymupdf python-docx openpyxl pillow
+    
+    - name: Build Desktop (windowed)
+      if: matrix.mode == 'desktop'
+      run: |
+        pyinstaller --name="Cyber Resume Parser" `
+          --windowed `
+          --icon=icon.jpg `
+          --add-data="static;static" `
+          --add-data="Templates;Templates" `
+          --add-data=".env;." `
+          desktop_app.py
+    
+    - name: Build Browser (console)
+      if: matrix.mode == 'browser'
+      run: |
+        pyinstaller --name="Cyber Resume Parser Browser" `
+          --console `
+          --add-data="static;static" `
+          --add-data="Templates;Templates" `
+          --add-data=".env;." `
+          desktop_app.py
+    
+    - name: Create ZIP
+      run: |
+        cd dist
+        Compress-Archive -Path * -DestinationPath ../Windows-${{ matrix.mode }}.zip
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Windows-${{ matrix.mode }}
+        path: Windows-${{ matrix.mode }}.zip
+
+  # ==================== 发布到 Releases ====================
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/Mac-desktop/Mac-desktop.zip
+          artifacts/Mac-browser/Mac-browser.zip
+          artifacts/Windows-desktop/Windows-desktop.zip
+          artifacts/Windows-browser/Windows-browser.zip
+        body: |
+          ## 📦 下载
+          
+          | 平台 | Desktop 版 | Browser 版 |
+          |------|-----------|------------|
+          | macOS | Mac-desktop.zip | Mac-browser.zip |
+          | Windows | Windows-desktop.zip | Windows-browser.zip |
+          
+          **Desktop 版**: 双击直接运行，独立窗口
+          **Browser 版**: 命令行启动，在浏览器中打开
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
