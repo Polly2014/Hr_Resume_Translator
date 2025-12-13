@@ -28,6 +28,13 @@ jobs:
         pip install openai python-dotenv
         pip install pymupdf python-docx openpyxl pillow
     
+    - name: Create .env file
+      run: |
+        echo "DEEPSEEK_API_KEY=" > .env
+        echo "DEEPSEEK_BASE_URL=https://api.deepseek.com" >> .env
+        echo "AI_MODEL=deepseek-chat" >> .env
+        echo "AI_TIMEOUT=150" >> .env
+    
     - name: Build Desktop (windowed)
       if: matrix.mode == 'desktop'
       run: |
@@ -81,6 +88,13 @@ jobs:
         pip install flask flask-cors pywebview
         pip install openai python-dotenv
         pip install pymupdf python-docx openpyxl pillow
+    
+    - name: Create .env file
+      run: |
+        echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" > .env
+        echo "DEEPSEEK_BASE_URL=https://api.deepseek.com" >> .env
+        echo "AI_MODEL=deepseek-chat" >> .env
+        echo "AI_TIMEOUT=150" >> .env
     
     - name: Build Desktop (windowed)
       if: matrix.mode == 'desktop'
