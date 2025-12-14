@@ -457,7 +457,7 @@ def run_webview():
     
     # 创建窗口
     webview.create_window(
-        '◈ CYBER RESUME PARSER v1.0 ◈',
+        '◈ CYBER RESUME PARSER v2.0 ◈',
         'http://127.0.0.1:5000',
         width=1000,
         height=750,
