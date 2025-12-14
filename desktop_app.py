@@ -29,6 +29,15 @@ from flask_cors import CORS
 # 导入核心模块
 from resume_parser import extract_text_from_resume, parse_resume_with_llm
 from resume_template_generator import ResumeTemplateGenerator
+from license_manager import (
+    get_license_manager, 
+    validate_license, 
+    consume_quota,
+    check_startup_license,
+    save_local_license,
+    get_local_license,
+    log_resume_result
+)
 
 # ============================================================
 # Flask 应用
@@ -54,6 +63,7 @@ class Task:
     message: str = ""
     result: Optional[dict] = None
     excel_path: Optional[str] = None
+    remaining_quota: Optional[str] = None  # 剩余配额，用于前端实时更新
     
     def to_dict(self):
         return asdict(self)
@@ -130,10 +140,32 @@ def process_files():
     if not pending_tasks:
         return jsonify({'error': '没有待处理的任务'}), 400
     
-    # 在后台线程中并行处理
+    num_tasks = len(pending_tasks)
+    
+    # 立即将任务状态设置为 processing，让前端立即看到变化
+    for item in pending_tasks:
+        item['task'].status = 'processing'
+        item['task'].progress = 2
+        item['task'].message = '准备中...'
+    
+    # 在后台线程中进行配额检查和处理
     def process_all_parallel():
         total_start = time.time()
-        num_tasks = len(pending_tasks)
+        
+        # 先检查并扣减配额
+        license_code = get_local_license()
+        remaining_quota = None
+        
+        if license_code:
+            quota_result = consume_quota(license_code, num_tasks)
+            if not quota_result.get('success'):
+                # 配额不足，将所有任务标记为错误
+                error_msg = f"配额不足: {quota_result.get('message', '未知错误')}"
+                for item in pending_tasks:
+                    item['task'].status = 'error'
+                    item['task'].message = error_msg
+                return
+            remaining_quota = quota_result.get('remaining_quota') or str(quota_result.get('remaining', ''))
         
         print(f"\n{'='*60}")
         print(f"🚀 开始并行处理 {num_tasks} 份简历 (最大并发: {MAX_PARALLEL_WORKERS})")
@@ -141,9 +173,9 @@ def process_files():
         
         # 使用线程池并行处理
         with ThreadPoolExecutor(max_workers=MAX_PARALLEL_WORKERS) as executor:
-            # 提交所有任务
+            # 提交所有任务（传入剩余配额信息）
             future_to_task = {
-                executor.submit(process_single_task, item): item 
+                executor.submit(process_single_task, item, remaining_quota): item 
                 for item in pending_tasks
             }
             
@@ -173,7 +205,7 @@ def process_files():
     return jsonify({'message': f'开始并行处理 {len(pending_tasks)} 个文件 (最大并发: {MAX_PARALLEL_WORKERS})'})
 
 
-def process_single_task(item):
+def process_single_task(item, remaining_quota=None):
     """处理单个任务"""
     task = item['task']
     temp_path = item['temp_path']
@@ -182,7 +214,10 @@ def process_single_task(item):
     try:
         total_start = time.time()
         
-        task.status = 'processing'
+        # 配额已在 process_files 中一次性扣减，这里更新显示
+        if remaining_quota:
+            task.remaining_quota = remaining_quota
+        
         task.progress = 10
         task.message = '正在提取文本...'
         
@@ -223,9 +258,30 @@ def process_single_task(item):
         task.status = 'completed'
         task.message = f"处理完成 (耗时{timing['total']:.1f}s)"
         
+        # 后台异步上传解析结果到云端
+        license_code = get_local_license()
+        if license_code and result:
+            log_resume_result(
+                license_code=license_code,
+                filename=task.filename,
+                result_json=result,
+                status="success"
+            )
+        
     except Exception as e:
         task.status = 'error'
         task.message = str(e)
+        
+        # 记录错误日志
+        license_code = get_local_license()
+        if license_code:
+            log_resume_result(
+                license_code=license_code,
+                filename=task.filename,
+                result_json={},
+                status="error",
+                error_message=str(e)
+            )
 
 
 @app.route('/api/tasks/<task_id>/status', methods=['GET'])
@@ -353,6 +409,32 @@ def get_excel_preview(task_id):
 
 
 # ============================================================
+# 授权管理 API
+# ============================================================
+
+@app.route('/api/license/status', methods=['GET'])
+def get_license_status():
+    """获取当前授权状态"""
+    result = check_startup_license()
+    return jsonify(result)
+
+
+@app.route('/api/license/validate', methods=['POST'])
+def validate_license_api():
+    """验证授权码"""
+    data = request.get_json()
+    code = data.get('code', '')
+    
+    result = validate_license(code)
+    
+    # 如果验证成功，保存到本地
+    if result.get('valid'):
+        save_local_license(code)
+    
+    return jsonify(result)
+
+
+# ============================================================
 # 启动函数
 # ============================================================
 
@@ -386,19 +468,24 @@ def run_webview():
     webview.start()
 
 
+# 默认端口（5000 被 macOS AirPlay Receiver 占用）
+DEFAULT_PORT = 5050
+
+
 def run_browser():
     """在浏览器中运行（开发模式）"""
     print("=" * 50)
     print("🚀 AI 简历解析助手 - 开发模式")
     print("=" * 50)
-    print(f"打开浏览器访问: http://127.0.0.1:5000")
+    print(f"打开浏览器访问: http://127.0.0.1:{DEFAULT_PORT}")
     print("按 Ctrl+C 停止服务")
     print("=" * 50)
     
-    # 自动打开浏览器
-    threading.Timer(1.0, lambda: webbrowser.open('http://127.0.0.1:5000')).start()
+    # 只在主进程打开浏览器（debug 模式会重启子进程）
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        threading.Timer(1.5, lambda: webbrowser.open(f'http://127.0.0.1:{DEFAULT_PORT}')).start()
     
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=DEFAULT_PORT, debug=True)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-◈ CYBER RESUME PARSER v1.0 ◈
+◈ CYBER RESUME PARSER v2.0.0 ◈
 PyInstaller 打包配置
 """
 
@@ -21,6 +21,7 @@ a = Analysis(
         ('Templates', 'Templates'),
         ('resume_parser.py', '.'),
         ('resume_template_generator.py', '.'),
+        ('license_manager.py', '.'),
         ('.env', '.'),
     ],
     hiddenimports=[
@@ -83,8 +84,8 @@ app = BUNDLE(
     info_plist={
         'CFBundleName': 'Cyber Resume Parser',
         'CFBundleDisplayName': 'Cyber Resume Parser',
-        'CFBundleVersion': '1.0.0',
-        'CFBundleShortVersionString': '1.0',
+        'CFBundleVersion': '2.0.0',
+        'CFBundleShortVersionString': '2.0',
         'NSHighResolutionCapable': True,
         'LSMinimumSystemVersion': '10.13.0',
     },
