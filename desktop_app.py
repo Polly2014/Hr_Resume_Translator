@@ -516,10 +516,10 @@ def run_webview():
     )
     
     # Start webview
-    # Windows: use mshtml (IE) to avoid pythonnet dependency issues
+    # Windows: use edgechromium for best rendering
     # macOS: use default cocoa
     if platform.system() == 'Windows':
-        webview.start(gui='mshtml')
+        webview.start(gui='edgechromium')
     else:
         webview.start()
 
