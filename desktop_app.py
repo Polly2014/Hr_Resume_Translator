@@ -514,12 +514,10 @@ def run_webview():
         background_color='#0f0f1a'
     )
     
-    # Windows uses edgechromium, macOS uses default cocoa
-    import platform
-    if platform.system() == 'Windows':
-        webview.start(gui='edgechromium')
-    else:
-        webview.start()
+    # Start webview - let it auto-select the best GUI backend
+    # Windows: will try edgechromium -> mshtml -> cef
+    # macOS: will use cocoa
+    webview.start()
 
 
 def run_browser():
