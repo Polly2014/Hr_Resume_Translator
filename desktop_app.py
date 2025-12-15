@@ -489,23 +489,23 @@ def wait_for_server(port, timeout=30):
 
 
 def run_webview():
-    """运行 PyWebView 窗口"""
+    """Run PyWebView window"""
     import webview
     
-    # 启动 Flask 在后台线程
+    # Start Flask in background thread
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
     
-    # 等待 Flask 启动（最多 30 秒）
+    # Wait for Flask to start (max 30 seconds)
     print(f"Waiting for server at http://127.0.0.1:{DEFAULT_PORT} ...")
     if not wait_for_server(DEFAULT_PORT, timeout=30):
         print("Error: Flask server startup timeout!")
         return
     print("Server started!")
     
-    # 创建窗口
+    # Create window
     webview.create_window(
-        '◈ CYBER RESUME PARSER v2.0 ◈',
+        'CYBER RESUME PARSER v2.0',
         f'http://127.0.0.1:{DEFAULT_PORT}',
         width=1000,
         height=750,
@@ -514,7 +514,7 @@ def run_webview():
         background_color='#0f0f1a'
     )
     
-    # Windows 使用 edgechromium，macOS 使用默认的 cocoa
+    # Windows uses edgechromium, macOS uses default cocoa
     import platform
     if platform.system() == 'Windows':
         webview.start(gui='edgechromium')
