@@ -39,7 +39,6 @@ jobs:
       if: matrix.mode == 'desktop'
       run: |
         pyinstaller --name="Cyber Resume Parser" \
-          --onefile \
           --windowed \
           --icon=icon.jpg \
           --add-data="static:static" \
@@ -51,8 +50,8 @@ jobs:
       if: matrix.mode == 'browser'
       run: |
         pyinstaller --name="Cyber Resume Parser Browser" \
-          --onefile \
           --console \
+          --icon=icon.jpg \
           --add-data="static:static" \
           --add-data="Templates:Templates" \
           --add-data=".env:." \
@@ -103,7 +102,6 @@ jobs:
       if: matrix.mode == 'desktop'
       run: |
         pyinstaller --name="Cyber Resume Parser" `
-          --onefile `
           --windowed `
           --icon=icon.jpg `
           --add-data="static;static" `
@@ -125,8 +123,8 @@ jobs:
       if: matrix.mode == 'browser'
       run: |
         pyinstaller --name="Cyber Resume Parser Browser" `
-          --onefile `
           --console `
+          --icon=icon.jpg `
           --add-data="static;static" `
           --add-data="Templates;Templates" `
           --add-data=".env;." `
