@@ -104,7 +104,7 @@ jobs:
       run: |
         pyinstaller --name="Cyber Resume Parser" `
           --onefile `
-          --console `
+          --windowed `
           --icon=icon.jpg `
           --add-data="static;static" `
           --add-data="Templates;Templates" `
