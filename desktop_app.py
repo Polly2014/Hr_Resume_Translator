@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🚀 AI 简历解析助手 - 桌面应用
-PyWebView + Flask 实现
-为 Qi Wang 倾心打造
+AI Resume Parser - Desktop Application
+PyWebView + Flask Implementation
 """
 
 import os
@@ -22,6 +21,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import base64
 import zipfile
 import io
+
+# Windows 控制台编码修复
+if sys.platform == 'win32':
+    # 设置标准输出编码为 UTF-8
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    # 设置环境变量
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
@@ -183,7 +192,7 @@ def process_files():
             remaining_quota = quota_result.get('remaining_quota') or str(quota_result.get('remaining', ''))
         
         print(f"\n{'='*60}")
-        print(f"🚀 开始并行处理 {num_tasks} 份简历 (最大并发: {MAX_PARALLEL_WORKERS})")
+        print(f"[START] Processing {num_tasks} resumes (max workers: {MAX_PARALLEL_WORKERS})")
         print(f"{'='*60}")
         
         # 使用线程池并行处理
@@ -202,16 +211,16 @@ def process_files():
                 completed_count += 1
                 try:
                     future.result()  # 获取结果，捕获异常
-                    print(f"✅ [{completed_count}/{num_tasks}] {task.filename} 完成")
+                    print(f"[OK] [{completed_count}/{num_tasks}] {task.filename} done")
                 except Exception as e:
                     task.status = 'error'
                     task.message = str(e)
-                    print(f"❌ [{completed_count}/{num_tasks}] {task.filename} 失败: {e}")
+                    print(f"[ERR] [{completed_count}/{num_tasks}] {task.filename} failed: {e}")
         
         total_time = time.time() - total_start
         print(f"\n{'='*60}")
-        print(f"🎉 全部处理完成！总耗时: {total_time:.1f}s")
-        print(f"📊 平均每份: {total_time/num_tasks:.1f}s (并行加速比: {num_tasks}x → {total_time:.1f}s)")
+        print(f"[DONE] All completed! Total time: {total_time:.1f}s")
+        print(f"[STAT] Avg: {total_time/num_tasks:.1f}s per resume")
         print(f"{'='*60}\n")
     
     thread = threading.Thread(target=process_all_parallel)
@@ -240,7 +249,7 @@ def process_single_task(item, remaining_quota=None):
         t0 = time.time()
         text = extract_text_from_resume(temp_path)
         timing['text_extraction'] = time.time() - t0
-        print(f"⏱️ [性能] 文本提取: {timing['text_extraction']:.2f}s")
+        print(f"[PERF] Text extraction: {timing['text_extraction']:.2f}s")
         
         task.progress = 30
         task.message = '正在调用 AI 解析...'
@@ -249,7 +258,7 @@ def process_single_task(item, remaining_quota=None):
         t0 = time.time()
         result = parse_resume_with_llm(text)
         timing['ai_parsing'] = time.time() - t0
-        print(f"⏱️ [性能] AI解析: {timing['ai_parsing']:.2f}s")
+        print(f"[PERF] AI parsing: {timing['ai_parsing']:.2f}s")
         
         task.progress = 70
         task.result = result
@@ -261,13 +270,13 @@ def process_single_task(item, remaining_quota=None):
         excel_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
         generator.generate(result, excel_temp.name)
         timing['excel_generation'] = time.time() - t0
-        print(f"⏱️ [性能] Excel生成: {timing['excel_generation']:.2f}s")
+        print(f"[PERF] Excel generation: {timing['excel_generation']:.2f}s")
         
         task.excel_path = excel_temp.name
         
         timing['total'] = time.time() - total_start
-        print(f"⏱️ [性能] 总耗时: {timing['total']:.2f}s")
-        print(f"⏱️ [性能] 时间分布: 文本提取 {timing['text_extraction']/timing['total']*100:.1f}% | AI解析 {timing['ai_parsing']/timing['total']*100:.1f}% | Excel生成 {timing['excel_generation']/timing['total']*100:.1f}%")
+        print(f"[PERF] Total: {timing['total']:.2f}s")
+        print(f"[PERF] Distribution: Text {timing['text_extraction']/timing['total']*100:.1f}% | AI {timing['ai_parsing']/timing['total']*100:.1f}% | Excel {timing['excel_generation']/timing['total']*100:.1f}%")
         
         task.progress = 100
         task.status = 'completed'
@@ -458,7 +467,7 @@ def run_flask():
     try:
         app.run(host='127.0.0.1', port=DEFAULT_PORT, debug=False, threaded=True)
     except Exception as e:
-        print(f"Flask 启动失败: {e}")
+        print(f"Flask startup failed: {e}")
 
 
 def wait_for_server(port, timeout=30):
@@ -488,11 +497,11 @@ def run_webview():
     flask_thread.start()
     
     # 等待 Flask 启动（最多 30 秒）
-    print(f"等待服务器启动 http://127.0.0.1:{DEFAULT_PORT} ...")
+    print(f"Waiting for server at http://127.0.0.1:{DEFAULT_PORT} ...")
     if not wait_for_server(DEFAULT_PORT, timeout=30):
-        print("错误: Flask 服务器启动超时!")
+        print("Error: Flask server startup timeout!")
         return
-    print("服务器已启动!")
+    print("Server started!")
     
     # 创建窗口
     webview.create_window(
@@ -514,12 +523,12 @@ def run_webview():
 
 
 def run_browser():
-    """在浏览器中运行（开发模式）"""
+    """Run in browser (dev mode)"""
     print("=" * 50)
-    print("🚀 AI 简历解析助手 - 开发模式")
+    print("AI Resume Parser - Dev Mode")
     print("=" * 50)
-    print(f"打开浏览器访问: http://127.0.0.1:{DEFAULT_PORT}")
-    print("按 Ctrl+C 停止服务")
+    print(f"Open browser: http://127.0.0.1:{DEFAULT_PORT}")
+    print("Press Ctrl+C to stop")
     print("=" * 50)
     
     # 只在主进程打开浏览器（debug 模式会重启子进程）
