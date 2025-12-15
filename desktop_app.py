@@ -43,6 +43,9 @@ from license_manager import (
 # Flask 应用
 # ============================================================
 
+# 默认端口（5000 被 macOS AirPlay Receiver 占用）
+DEFAULT_PORT = 5050
+
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
@@ -458,18 +461,20 @@ def run_webview():
     # 创建窗口
     webview.create_window(
         '◈ CYBER RESUME PARSER v2.0 ◈',
-        'http://127.0.0.1:5000',
+        f'http://127.0.0.1:{DEFAULT_PORT}',
         width=1000,
         height=750,
         min_size=(800, 600),
         resizable=True,
         background_color='#0f0f1a'
     )
-    webview.start()
-
-
-# 默认端口（5000 被 macOS AirPlay Receiver 占用）
-DEFAULT_PORT = 5050
+    
+    # Windows 使用 edgechromium，macOS 使用默认的 cocoa
+    import platform
+    if platform.system() == 'Windows':
+        webview.start(gui='edgechromium')
+    else:
+        webview.start()
 
 
 def run_browser():

@@ -39,6 +39,7 @@ jobs:
       if: matrix.mode == 'desktop'
       run: |
         pyinstaller --name="Cyber Resume Parser" \
+          --onefile \
           --windowed \
           --icon=icon.jpg \
           --add-data="static:static" \
@@ -50,6 +51,7 @@ jobs:
       if: matrix.mode == 'browser'
       run: |
         pyinstaller --name="Cyber Resume Parser Browser" \
+          --onefile \
           --console \
           --add-data="static:static" \
           --add-data="Templates:Templates" \
@@ -88,6 +90,7 @@ jobs:
         pip install flask flask-cors pywebview
         pip install openai python-dotenv requests
         pip install pymupdf python-docx openpyxl pillow
+        pip install pythonnet clr-loader
     
     - name: Create .env file
       run: |
@@ -100,17 +103,24 @@ jobs:
       if: matrix.mode == 'desktop'
       run: |
         pyinstaller --name="Cyber Resume Parser" `
+          --onefile `
           --windowed `
           --icon=icon.jpg `
           --add-data="static;static" `
           --add-data="Templates;Templates" `
           --add-data=".env;." `
+          --hidden-import=clr_loader `
+          --hidden-import=pythonnet `
+          --hidden-import=webview.platforms.edgechromium `
+          --collect-all=clr_loader `
+          --collect-all=pythonnet `
           desktop_app.py
     
     - name: Build Browser (console)
       if: matrix.mode == 'browser'
       run: |
         pyinstaller --name="Cyber Resume Parser Browser" `
+          --onefile `
           --console `
           --add-data="static;static" `
           --add-data="Templates;Templates" `
