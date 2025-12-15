@@ -46,12 +46,24 @@ from license_manager import (
 # 默认端口（5000 被 macOS AirPlay Receiver 占用）
 DEFAULT_PORT = 5050
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+# PyInstaller 单文件模式资源路径处理
+def get_resource_path(relative_path):
+    """获取资源文件的绝对路径，兼容 PyInstaller 打包"""
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller 打包后的临时目录
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+
+# 静态文件和模板路径
+static_folder = get_resource_path('static')
+templates_folder = get_resource_path('Templates')
+
+app = Flask(__name__, static_folder=static_folder, static_url_path='')
 CORS(app)
 
 # 全局任务存储
 tasks = {}
-template_path = Path(__file__).parent / "Templates" / "template.xlsx"
+template_path = Path(templates_folder) / "template.xlsx"
 
 # 并行处理配置
 MAX_PARALLEL_WORKERS = 3  # 最大并行数，避免 API 限流
