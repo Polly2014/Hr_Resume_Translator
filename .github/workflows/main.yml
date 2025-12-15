@@ -104,7 +104,7 @@ jobs:
       run: |
         pyinstaller --name="Cyber Resume Parser" `
           --onefile `
-          --windowed `
+          --console `
           --icon=icon.jpg `
           --add-data="static;static" `
           --add-data="Templates;Templates" `
@@ -112,8 +112,13 @@ jobs:
           --hidden-import=clr_loader `
           --hidden-import=pythonnet `
           --hidden-import=webview.platforms.edgechromium `
+          --hidden-import=flask `
+          --hidden-import=flask_cors `
+          --hidden-import=jinja2 `
+          --hidden-import=werkzeug `
           --collect-all=clr_loader `
           --collect-all=pythonnet `
+          --collect-all=webview `
           desktop_app.py
     
     - name: Build Browser (console)

@@ -453,9 +453,30 @@ def validate_license_api():
 # 启动函数
 # ============================================================
 
-def run_flask(port=5000):
+def run_flask():
     """运行 Flask 服务"""
-    app.run(host='127.0.0.1', port=port, debug=False, threaded=True)
+    try:
+        app.run(host='127.0.0.1', port=DEFAULT_PORT, debug=False, threaded=True)
+    except Exception as e:
+        print(f"Flask 启动失败: {e}")
+
+
+def wait_for_server(port, timeout=30):
+    """等待服务器启动"""
+    import socket
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('127.0.0.1', port))
+            sock.close()
+            if result == 0:
+                return True
+        except:
+            pass
+        time.sleep(0.5)
+    return False
 
 
 def run_webview():
@@ -466,9 +487,12 @@ def run_webview():
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
     
-    # 等待 Flask 启动
-    import time
-    time.sleep(1)
+    # 等待 Flask 启动（最多 30 秒）
+    print(f"等待服务器启动 http://127.0.0.1:{DEFAULT_PORT} ...")
+    if not wait_for_server(DEFAULT_PORT, timeout=30):
+        print("错误: Flask 服务器启动超时!")
+        return
+    print("服务器已启动!")
     
     # 创建窗口
     webview.create_window(
