@@ -491,6 +491,7 @@ def wait_for_server(port, timeout=30):
 def run_webview():
     """Run PyWebView window"""
     import webview
+    import platform
     
     # Start Flask in background thread
     flask_thread = threading.Thread(target=run_flask, daemon=True)
@@ -514,10 +515,13 @@ def run_webview():
         background_color='#0f0f1a'
     )
     
-    # Start webview - let it auto-select the best GUI backend
-    # Windows: will try edgechromium -> mshtml -> cef
-    # macOS: will use cocoa
-    webview.start()
+    # Start webview
+    # Windows: use mshtml (IE) to avoid pythonnet dependency issues
+    # macOS: use default cocoa
+    if platform.system() == 'Windows':
+        webview.start(gui='mshtml')
+    else:
+        webview.start()
 
 
 def run_browser():

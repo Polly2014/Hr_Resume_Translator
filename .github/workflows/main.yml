@@ -110,7 +110,8 @@ jobs:
           --hidden-import=flask_cors `
           --hidden-import=jinja2 `
           --hidden-import=werkzeug `
-          --collect-all=webview `
+          --hidden-import=webview `
+          --hidden-import=webview.platforms.mshtml `
           desktop_app.py
     
     - name: Build Browser (console)
